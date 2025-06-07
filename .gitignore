@@ -3,8 +3,7 @@ __pycache__/
 /cache/
 
 # Ignore data generated during execution
-20241001_atividade_economica.csv
-atividade_economica_filtrada.csv
+/data/
 
 # Ignore virtual environments
 venv/

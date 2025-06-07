@@ -30,9 +30,12 @@ def downloadFile(url, filename):
         print(f"[✗] Erro ao baixar: {e}")
 
 if __name__ == '__main__':
-    url = "https://ckan.pbh.gov.br/dataset/ec3efaac-0ca6-4846-9e32-0ffff2d76dbb/resource/a35a0ed3-c933-4919-b23f-b925c37b64b8/download/20241001_atividade_economica.csv"
-    filename = "20241001_atividade_economica.csv"
+    url = "https://ckan.pbh.gov.br/dataset/ec3efaac-0ca6-4846-9e32-0ffff2d76dbb/resource/a35a0ed3-c933-4919-b23f-b925c37b64b8/download/20250401_atividade_economica.csv"
+    filename = "data/20250401_atividade_economica.csv"
+    
+    # Garante que a pasta 'data' existe
+    os.makedirs('data', exist_ok=True)
     
     downloadFile(url, filename)
 
-    filtrar_csv.main()
+    filtrar_csv.main(filename, 'data/atividade_economica_filtrada.csv')

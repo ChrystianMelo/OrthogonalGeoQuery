@@ -4,10 +4,6 @@ import time
 import osmnx as ox
 import matplotlib.pyplot as plt
 
-# Inputs
-INPUT_CSV_FILE = '20241001_atividade_economica.csv'
-OUTPUT_CSV_FILE = 'atividade_economica_filtrada.csv'
-
 # Colunas para criar o endereço formatado
 COL_TIPO_LOGRADOURO = 'DESC_LOGRADOURO'
 COL_NOME_LOGRADOURO = 'NOME_LOGRADOURO'
@@ -77,7 +73,7 @@ def format_address(row):
         print(f"Erro ao formatar endereço para a linha: {row.name} - {e}")
         return ""
 
-def main():
+def main(INPUT_CSV_FILE, OUTPUT_CSV_FILE):
     # Verifica se o arquivo de entrada existe no diretório
     if not os.path.exists(INPUT_CSV_FILE):
         print(f"Erro: Arquivo de entrada '{INPUT_CSV_FILE}' não encontrado no diretório atual.")
