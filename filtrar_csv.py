@@ -100,6 +100,7 @@ def main(INPUT_CSV_FILE, OUTPUT_CSV_FILE):
 
     print(f"Filtrando os estabelecimentos possuem 'bar' ou 'restaurante' na descrição da CNAE...")
 
+    # Filtra os estabelecimentos cuja descrição da CNAE principal contém 'bar' ou 'restaurante'
     COL_DESCRICAO_CNAE = 'DESCRICAO_CNAE_PRINCIPAL'
     df_filtered[COL_DESCRICAO_CNAE] = df_filtered[COL_DESCRICAO_CNAE].astype(str).fillna('')
     df_filtered = df_filtered[df_filtered[COL_DESCRICAO_CNAE].str.contains("bar|restaurante", case=False, na=False)].copy()
