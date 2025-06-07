@@ -1,3 +1,10 @@
+# Ignore Cache
+__pycache__/
 /cache/
+
+# Ignore data generated during execution
 20241001_atividade_economica.csv
 atividade_economica_filtrada.csv
+
+# Ignore virtual environments
+venv/
