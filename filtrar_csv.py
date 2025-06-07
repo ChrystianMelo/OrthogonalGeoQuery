@@ -97,7 +97,15 @@ def main(INPUT_CSV_FILE, OUTPUT_CSV_FILE):
     
     # Mantém linhas onde COL_CNAE_CODIGO contém CNAE_CODE_PREFIX_TO_FILTER
     df_filtered = df[df[COL_CNAE_CODIGO].str.contains(CNAE_CODE_PREFIX_TO_FILTER, case=False, na=False)].copy()
+
+    print(f"Filtrando os estabelecimentos possuem 'bar' ou 'restaurante' na descrição da CNAE...")
+
+    COL_DESCRICAO_CNAE = 'DESCRICAO_CNAE_PRINCIPAL'
+    df_filtered[COL_DESCRICAO_CNAE] = df_filtered[COL_DESCRICAO_CNAE].astype(str).fillna('')
+    df_filtered = df_filtered[df_filtered[COL_DESCRICAO_CNAE].str.contains("bar|restaurante", case=False, na=False)].copy()
+
     filtered_count = len(df_filtered)
+
     print(f"Filtragem resultou em {filtered_count} estabelecimentos (de {original_count} originais).")
 
     if filtered_count == 0:
