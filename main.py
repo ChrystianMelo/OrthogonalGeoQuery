@@ -114,6 +114,6 @@ if __name__ == '__main__':
     # 2) Salva em CSV separado
     coordinates = "data/cordenadas_bares_restaurantes.csv"
     if not os.path.exists(coordinates):
-        saveCoordinatesToCsv(coordinates, filteredData)
+        saveCoordinatesToCsv(getCoordinates(filteredData), filteredData)
     else:
         print(f"[✓] O arquivo '{coordinates}' já existe. Nenhum processo necessário.")
