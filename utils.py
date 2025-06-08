@@ -5,7 +5,7 @@ import pandas as pd
 from typing import List, Tuple
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
-from typing import Dict, Tuple
+from typing import List, Tuple, Optional
 from tqdm import tqdm
 from pathlib import Path
 
@@ -34,7 +34,7 @@ def downloadFile(url, filename):
 
 def getCoordinates(csv_path: str,
                     progress: bool = True,
-                    cache_ok: bool = True) -> Dict[int, Tuple[float, float]]:
+                    cache_ok: bool = True) -> dict[int, Tuple[float, float]]:
     """
     Geocodifica endereços (coluna ENDERECO) usando Nominatim
     e devolve {ID: (lat, lon)} com barra de progresso.
@@ -52,8 +52,8 @@ def getCoordinates(csv_path: str,
         error_wait_seconds=2,
     )
 
-    coords: Dict[int, Tuple[float, float]] = {}
-    cache:  Dict[str, Tuple[float, float]] = {}
+    coords: dict[int, Tuple[float, float]] = {}
+    cache:  dict[str, Tuple[float, float]] = {}
 
     iterator = tqdm(df.itertuples(index=False), total=len(df)) if progress else df.itertuples(index=False)
 
@@ -61,7 +61,7 @@ def getCoordinates(csv_path: str,
         ender = row.ENDERECO
         estid = row.ID_ATIV_ECON_ESTABELECIMENTO
 
-        # cache simples p/ endereços duplicados
+        
         if cache_ok and ender in cache:
             coords[estid] = cache[ender]
             continue
@@ -74,7 +74,7 @@ def getCoordinates(csv_path: str,
 
     return coords
 
-def saveCoordinatesToCsv(coords: Dict[int, Tuple[float, float]],
+def saveCoordinatesToCsv(coords: dict[int, Tuple[float, float]],
                             output_path: str,
                             sep: str = ';') -> None:
     """
@@ -103,11 +103,11 @@ def buildGeojson(data_csv: str | Path,
     coords_csv = Path(coords_csv)
     out_geojson = Path(out_geojson)
 
-    # 1 ▸ Carrega cada CSV
+    
     df_data = pd.read_csv(data_csv, sep=";", encoding="utf-8", low_memory=False)
     df_coords = pd.read_csv(coords_csv, sep=";", encoding="utf-8")
 
-    # 2 ▸ Merge por ID
+    
     df = df_data.merge(
         df_coords,
         on="ID_ATIV_ECON_ESTABELECIMENTO",
@@ -115,7 +115,7 @@ def buildGeojson(data_csv: str | Path,
         validate="one_to_one",
     )
 
-    # 3 ▸ Constrói FeatureCollection
+    
     features = []
     for _, row in df.iterrows():
         if pd.isna(row["LATITUDE"]) or pd.isna(row["LONGITUDE"]):
@@ -137,43 +137,109 @@ def buildGeojson(data_csv: str | Path,
 
     geojson = {"type": "FeatureCollection", "features": features}
 
-    # 4 ▸ Salva
+    
     out_geojson.parent.mkdir(parents=True, exist_ok=True)
     with open(out_geojson, "w", encoding="utf-8") as f:
         json.dump(geojson, f, ensure_ascii=False)
 
     print(f"[✓] GeoJSON salvo em {out_geojson} com {len(features)} pontos.")
 
+BBox = Tuple[float, float, float, float]
+
 class KDNode:
     __slots__ = ("point", "idx", "left", "right")
+
     def __init__(self, point: Tuple[float, float], idx: int):
         self.point, self.idx = point, idx
-        self.left: "KDNode | None" = None
-        self.right: "KDNode | None" = None
-
-def build_kd(arr: List[Tuple[Tuple[float, float], int]], depth=0):
+        self.left:  Optional["KDNode"] = None
+        self.right: Optional["KDNode"] = None
+def build_kd(arr: List[Tuple[Tuple[float, float], int]], depth: int = 0) -> Optional[KDNode]:
     if not arr:
         return None
     axis = depth % 2
     arr.sort(key=lambda p: p[0][axis])
     mid = len(arr) // 2
     node = KDNode(arr[mid][0], arr[mid][1])
-    node.left = build_kd(arr[:mid], depth + 1)
-    node.right = build_kd(arr[mid + 1 :], depth + 1)
+    node.left  = build_kd(arr[:mid],        depth + 1)
+    node.right = build_kd(arr[mid + 1:],    depth + 1)
     return node
 
-def range_search(node: "KDNode | None", bbox: Tuple[float, float, float, float], depth=0, acc=None):
+def _inside(pt: Tuple[float, float], box: BBox) -> bool:
+    x, y = pt
+    xmin, ymin, xmax, ymax = box
+    return xmin <= x <= xmax and ymin <= y <= ymax
+
+def _report_subtree(node: Optional[KDNode], box: BBox, out: List[int]) -> None:
     if node is None:
-        return acc or []
-    if acc is None:
-        acc = []
-    x, y = node.point
-    xmin, ymin, xmax, ymax = bbox
-    if xmin <= x <= xmax and ymin <= y <= ymax:
-        acc.append(node.idx)
-    axis = depth % 2
-    if (axis == 0 and xmin <= x) or (axis == 1 and ymin <= y):
-        range_search(node.left, bbox, depth + 1, acc)
-    if (axis == 0 and x <= xmax) or (axis == 1 and y <= ymax):
-        range_search(node.right, bbox, depth + 1, acc)
-    return acc
+        return
+    if _inside(node.point, box):
+        out.append(node.idx)
+    _report_subtree(node.left,  box, out)
+    _report_subtree(node.right, box, out)
+
+
+def _find_split_node(root: Optional[KDNode],
+                     xmin: float, xmax: float) -> Tuple[Optional[KDNode], int]:
+    """Implementa o FINDSPLITNODE do slide."""
+    v, depth = root, 0
+    while v and (v.left or v.right):
+        axis   = depth % 2
+        coord  = v.point[axis]
+        if xmax <= coord:
+            v = v.left
+        elif xmin > coord:
+            v = v.right
+        else:
+            break
+        depth += 1
+    return v, depth
+
+def range_search(root: Optional[KDNode],
+                 box: BBox) -> List[int]:
+    xmin, ymin, xmax, ymax = box
+    if root is None or xmin > xmax or ymin > ymax:
+        return []
+
+    result: List[int] = []
+
+    
+    vsplit, dsplit = _find_split_node(root, xmin, xmax)
+    if vsplit is None:
+        return result
+
+    
+    if _inside(vsplit.point, box):
+        result.append(vsplit.idx)
+
+    
+    v, depth = vsplit.left, dsplit + 1
+    while v:
+        axis  = depth % 2
+        coord = v.point[axis]
+
+        
+        if (axis == 0 and xmin <= coord) or (axis == 1 and ymin <= coord):
+            _report_subtree(v.right, box, result)
+            if _inside(v.point, box):
+                result.append(v.idx)
+            v = v.left
+        else:
+            v = v.right
+        depth += 1
+
+    
+    v, depth = vsplit.right, dsplit + 1
+    while v:
+        axis  = depth % 2
+        coord = v.point[axis]
+
+        if (axis == 0 and coord <= xmax) or (axis == 1 and coord <= ymax):
+            _report_subtree(v.left, box, result)
+            if _inside(v.point, box):
+                result.append(v.idx)
+            v = v.right
+        else:
+            v = v.left
+        depth += 1
+
+    return result
