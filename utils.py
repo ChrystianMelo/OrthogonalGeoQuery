@@ -84,4 +84,33 @@ def saveCoordinatesToCsv(coords: Dict[int, Tuple[float, float]],
         columns=["ID_ATIV_ECON_ESTABELECIMENTO", "LATITUDE", "LONGITUDE"]
     )
     df_out.to_csv(output_path, sep=sep, index=False, encoding='utf-8')
-    print(f"[✓] Coordenadas salvas em: {output_path}")            
+    print(f"[✓] Coordenadas salvas em: {output_path}")
+
+class Node:
+    __slots__ = "point", "left", "right"
+    def __init__(self, point): self.point, self.left, self.right = point, None, None
+
+def build_kd(points, depth=0):
+    if not points: return None
+    k = 2
+    axis = depth % k
+    points.sort(key=lambda p: p[axis])
+    med = len(points) // 2
+    node = Node(points[med])
+    node.left  = build_kd(points[:med], depth+1)
+    node.right = build_kd(points[med+1:], depth+1)
+    return node
+
+def range_search(node, rect, depth=0, acc=None):
+    if node is None: return acc
+    if acc is None: acc = []
+    x, y = node.point
+    (xmin, ymin, xmax, ymax) = rect
+    if xmin <= x <= xmax and ymin <= y <= ymax:
+        acc.append(node.point)
+    axis = depth % 2
+    if (axis == 0 and xmin <= x) or (axis == 1 and ymin <= y):
+        range_search(node.left, rect, depth+1, acc)
+    if (axis == 0 and x <= xmax) or (axis == 1 and y <= ymax):
+        range_search(node.right, rect, depth+1, acc)
+    return acc
