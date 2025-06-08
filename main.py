@@ -30,3 +30,10 @@ if __name__ == '__main__':
         utils.saveCoordinatesToCsv(coords, coordinatesData)
     else:
         print(f"[✓] O arquivo '{coordinatesData}' já existe. Nenhum processo necessário.")
+
+    coordinatesGeoJson = "data/bares_restaurantes.geojson"
+    if not os.path.exists(coordinatesGeoJson):
+        utils.buildGeojson(filteredData, coordinatesData, coordinatesGeoJson)
+        print(f"[✓] Conversão para GeoJson feita com sucesso.")
+    else:
+        print(f"[✓] O arquivo '{coordinatesGeoJson}' já existe. Nenhum processo necessário.")

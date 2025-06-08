@@ -4,5 +4,5 @@ call venv\Scripts\activate
 
 echo Running project...
 py main.py
-
+py app.py
 pause

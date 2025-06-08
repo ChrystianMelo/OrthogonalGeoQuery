@@ -3,3 +3,8 @@ osmnx
 matplotlib
 geopy
 tqdm
+dash>=2.0
+dash-leaflet>=0.1.22
+dash-bootstrap-components
+geopandas
+shapely
