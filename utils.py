@@ -144,102 +144,37 @@ def buildGeojson(data_csv: str | Path,
 
     print(f"[✓] GeoJSON salvo em {out_geojson} com {len(features)} pontos.")
 
-BBox = Tuple[float, float, float, float]
-
 class KDNode:
     __slots__ = ("point", "idx", "left", "right")
 
     def __init__(self, point: Tuple[float, float], idx: int):
         self.point, self.idx = point, idx
-        self.left:  Optional["KDNode"] = None
-        self.right: Optional["KDNode"] = None
-def build_kd(arr: List[Tuple[Tuple[float, float], int]], depth: int = 0) -> Optional[KDNode]:
+        self.left: "KDNode | None" = None
+        self.right: "KDNode | None" = None
+
+def build_kd(arr: List[Tuple[Tuple[float, float], int]], depth=0):
     if not arr:
         return None
     axis = depth % 2
     arr.sort(key=lambda p: p[0][axis])
     mid = len(arr) // 2
     node = KDNode(arr[mid][0], arr[mid][1])
-    node.left  = build_kd(arr[:mid],        depth + 1)
-    node.right = build_kd(arr[mid + 1:],    depth + 1)
+    node.left = build_kd(arr[:mid], depth + 1)
+    node.right = build_kd(arr[mid + 1 :], depth + 1)
     return node
 
-def _inside(pt: Tuple[float, float], box: BBox) -> bool:
-    x, y = pt
-    xmin, ymin, xmax, ymax = box
-    return xmin <= x <= xmax and ymin <= y <= ymax
-
-def _report_subtree(node: Optional[KDNode], box: BBox, out: List[int]) -> None:
+def range_search(node: "KDNode | None", bbox: Tuple[float, float, float, float], depth=0, acc=None):
     if node is None:
-        return
-    if _inside(node.point, box):
-        out.append(node.idx)
-    _report_subtree(node.left,  box, out)
-    _report_subtree(node.right, box, out)
-
-
-def _find_split_node(root: Optional[KDNode],
-                     xmin: float, xmax: float) -> Tuple[Optional[KDNode], int]:
-    """Implementa o FINDSPLITNODE do slide."""
-    v, depth = root, 0
-    while v and (v.left or v.right):
-        axis   = depth % 2
-        coord  = v.point[axis]
-        if xmax <= coord:
-            v = v.left
-        elif xmin > coord:
-            v = v.right
-        else:
-            break
-        depth += 1
-    return v, depth
-
-def range_search(root: Optional[KDNode],
-                 box: BBox) -> List[int]:
-    xmin, ymin, xmax, ymax = box
-    if root is None or xmin > xmax or ymin > ymax:
-        return []
-
-    result: List[int] = []
-
-    
-    vsplit, dsplit = _find_split_node(root, xmin, xmax)
-    if vsplit is None:
-        return result
-
-    
-    if _inside(vsplit.point, box):
-        result.append(vsplit.idx)
-
-    
-    v, depth = vsplit.left, dsplit + 1
-    while v:
-        axis  = depth % 2
-        coord = v.point[axis]
-
-        
-        if (axis == 0 and xmin <= coord) or (axis == 1 and ymin <= coord):
-            _report_subtree(v.right, box, result)
-            if _inside(v.point, box):
-                result.append(v.idx)
-            v = v.left
-        else:
-            v = v.right
-        depth += 1
-
-    
-    v, depth = vsplit.right, dsplit + 1
-    while v:
-        axis  = depth % 2
-        coord = v.point[axis]
-
-        if (axis == 0 and coord <= xmax) or (axis == 1 and coord <= ymax):
-            _report_subtree(v.left, box, result)
-            if _inside(v.point, box):
-                result.append(v.idx)
-            v = v.right
-        else:
-            v = v.left
-        depth += 1
-
-    return result
+        return acc or []
+    if acc is None:
+        acc = []
+    x, y = node.point
+    xmin, ymin, xmax, ymax = bbox
+    if xmin <= x <= xmax and ymin <= y <= ymax:
+        acc.append(node.idx)
+    axis = depth % 2
+    if (axis == 0 and xmin <= x) or (axis == 1 and ymin <= y):
+        range_search(node.left, bbox, depth + 1, acc)
+    if (axis == 0 and x <= xmax) or (axis == 1 and y <= ymax):
+        range_search(node.right, bbox, depth + 1, acc)
+    return acc
