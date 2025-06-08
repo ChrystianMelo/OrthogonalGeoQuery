@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import List, Tuple
 
+import utils
+
 import dash
 import dash_leaflet as dl
 import dash_bootstrap_components as dbc
@@ -27,41 +29,7 @@ points: List[Tuple[float, float]] = [
 # 2. Implementa k‑d tree e busca ortogonal
 ###########################################################################
 
-class KDNode:
-    __slots__ = ("point", "idx", "left", "right")
-    def __init__(self, point: Tuple[float, float], idx: int):
-        self.point, self.idx = point, idx
-        self.left: "KDNode | None" = None
-        self.right: "KDNode | None" = None
-
-def build_kd(arr: List[Tuple[Tuple[float, float], int]], depth=0):
-    if not arr:
-        return None
-    axis = depth % 2
-    arr.sort(key=lambda p: p[0][axis])
-    mid = len(arr) // 2
-    node = KDNode(arr[mid][0], arr[mid][1])
-    node.left = build_kd(arr[:mid], depth + 1)
-    node.right = build_kd(arr[mid + 1 :], depth + 1)
-    return node
-
-def range_search(node: "KDNode | None", bbox: Tuple[float, float, float, float], depth=0, acc=None):
-    if node is None:
-        return acc or []
-    if acc is None:
-        acc = []
-    x, y = node.point
-    xmin, ymin, xmax, ymax = bbox
-    if xmin <= x <= xmax and ymin <= y <= ymax:
-        acc.append(node.idx)
-    axis = depth % 2
-    if (axis == 0 and xmin <= x) or (axis == 1 and ymin <= y):
-        range_search(node.left, bbox, depth + 1, acc)
-    if (axis == 0 and x <= xmax) or (axis == 1 and y <= ymax):
-        range_search(node.right, bbox, depth + 1, acc)
-    return acc
-
-root = build_kd([(pt, i) for i, pt in enumerate(points)])
+root = utils.build_kd([(pt, i) for i, pt in enumerate(points)])
 
 ###########################################################################
 # 3. Camadas Leaflet: GeoJSON + FeatureGroup + EditControl
@@ -139,7 +107,7 @@ def on_rectangle(selection_geojson):
     coords = selection_geojson["features"][-1]["geometry"]["coordinates"][0]
     xs, ys = zip(*coords)
     bbox = (min(xs), min(ys), max(xs), max(ys))
-    hits = range_search(root, bbox)
+    hits = utils.range_search(root, bbox)
     return f"Selecionados {len(hits)} estabelecimentos dentro do retângulo."
 
 ###########################################################################

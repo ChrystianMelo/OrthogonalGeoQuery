@@ -1,6 +1,7 @@
 
 import urllib.request
 
+from typing import List, Tuple
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 from typing import Dict, Tuple
@@ -86,31 +87,36 @@ def saveCoordinatesToCsv(coords: Dict[int, Tuple[float, float]],
     df_out.to_csv(output_path, sep=sep, index=False, encoding='utf-8')
     print(f"[✓] Coordenadas salvas em: {output_path}")
 
-class Node:
-    __slots__ = "point", "left", "right"
-    def __init__(self, point): self.point, self.left, self.right = point, None, None
+class KDNode:
+    __slots__ = ("point", "idx", "left", "right")
+    def __init__(self, point: Tuple[float, float], idx: int):
+        self.point, self.idx = point, idx
+        self.left: "KDNode | None" = None
+        self.right: "KDNode | None" = None
 
-def build_kd(points, depth=0):
-    if not points: return None
-    k = 2
-    axis = depth % k
-    points.sort(key=lambda p: p[axis])
-    med = len(points) // 2
-    node = Node(points[med])
-    node.left  = build_kd(points[:med], depth+1)
-    node.right = build_kd(points[med+1:], depth+1)
+def build_kd(arr: List[Tuple[Tuple[float, float], int]], depth=0):
+    if not arr:
+        return None
+    axis = depth % 2
+    arr.sort(key=lambda p: p[0][axis])
+    mid = len(arr) // 2
+    node = KDNode(arr[mid][0], arr[mid][1])
+    node.left = build_kd(arr[:mid], depth + 1)
+    node.right = build_kd(arr[mid + 1 :], depth + 1)
     return node
 
-def range_search(node, rect, depth=0, acc=None):
-    if node is None: return acc
-    if acc is None: acc = []
+def range_search(node: "KDNode | None", bbox: Tuple[float, float, float, float], depth=0, acc=None):
+    if node is None:
+        return acc or []
+    if acc is None:
+        acc = []
     x, y = node.point
-    (xmin, ymin, xmax, ymax) = rect
+    xmin, ymin, xmax, ymax = bbox
     if xmin <= x <= xmax and ymin <= y <= ymax:
-        acc.append(node.point)
+        acc.append(node.idx)
     axis = depth % 2
     if (axis == 0 and xmin <= x) or (axis == 1 and ymin <= y):
-        range_search(node.left, rect, depth+1, acc)
+        range_search(node.left, bbox, depth + 1, acc)
     if (axis == 0 and x <= xmax) or (axis == 1 and y <= ymax):
-        range_search(node.right, rect, depth+1, acc)
+        range_search(node.right, bbox, depth + 1, acc)
     return acc
