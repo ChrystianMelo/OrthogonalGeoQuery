@@ -3,7 +3,7 @@ __pycache__/
 /cache/
 
 # Ignore data generated during execution
-/data/
+# /data/
 
 # Ignore virtual environments
 venv/
