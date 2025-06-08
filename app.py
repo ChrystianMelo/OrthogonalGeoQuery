@@ -12,6 +12,7 @@ import dash
 import dash_leaflet as dl
 import dash_bootstrap_components as dbc
 from dash import html, Output, Input, State
+from dash import dash_table
 
 ###########################################################################
 # 1. Carrega GeoJSON dos estabelecimentos
@@ -108,7 +109,25 @@ def on_rectangle(selection_geojson):
     xs, ys = zip(*coords)
     bbox = (min(xs), min(ys), max(xs), max(ys))
     hits = utils.range_search(root, bbox)
-    return f"Selecionados {len(hits)} estabelecimentos dentro do retângulo."
+
+    if not hits:
+        return "Nenhum estabelecimento encontrado."
+
+    selected_features = [geojson_data["features"][i]["properties"] for i in hits]
+
+    columns = [{"name": col.capitalize(), "id": col} for col in selected_features[0].keys()]
+
+    return dash_table.DataTable(
+        data=selected_features,
+        columns=columns,
+        page_size=len(selected_features),  # Exibe todos os itens
+        style_table={
+            "overflowX": "auto",
+            "overflowY": "auto",
+            "height": "300px"  # Altura fixa para rolagem vertical
+        },
+        fixed_rows={'headers': True},  # Cabeçalho fixo ao rolar
+    )
 
 ###########################################################################
 if __name__ == "__main__":
