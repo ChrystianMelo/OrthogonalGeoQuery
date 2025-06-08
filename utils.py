@@ -1,11 +1,13 @@
-
+import json
 import urllib.request
+import pandas as pd
 
 from typing import List, Tuple
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 from typing import Dict, Tuple
 from tqdm import tqdm
+from pathlib import Path
 
 def downloadFile(url, filename):
     """
@@ -86,6 +88,61 @@ def saveCoordinatesToCsv(coords: Dict[int, Tuple[float, float]],
     )
     df_out.to_csv(output_path, sep=sep, index=False, encoding='utf-8')
     print(f"[✓] Coordenadas salvas em: {output_path}")
+
+def buildGeojson(data_csv: str | Path,
+                 coords_csv: str | Path,
+                 out_geojson: str | Path) -> None:
+    """
+    Une dados + coordenadas usando ID_ATIV_ECON_ESTABELECIMENTO
+    e gera um GeoJSON pronto para o Leaflet/Dash.
+
+    Campos incluídos em properties:
+        id, nome, endereco, alvara, inicio
+    """
+    data_csv = Path(data_csv)
+    coords_csv = Path(coords_csv)
+    out_geojson = Path(out_geojson)
+
+    # 1 ▸ Carrega cada CSV
+    df_data = pd.read_csv(data_csv, sep=";", encoding="utf-8", low_memory=False)
+    df_coords = pd.read_csv(coords_csv, sep=";", encoding="utf-8")
+
+    # 2 ▸ Merge por ID
+    df = df_data.merge(
+        df_coords,
+        on="ID_ATIV_ECON_ESTABELECIMENTO",
+        how="inner",
+        validate="one_to_one",
+    )
+
+    # 3 ▸ Constrói FeatureCollection
+    features = []
+    for _, row in df.iterrows():
+        if pd.isna(row["LATITUDE"]) or pd.isna(row["LONGITUDE"]):
+            continue
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [row["LONGITUDE"], row["LATITUDE"]],
+            },
+            "properties": {
+                "id":       row["ID_ATIV_ECON_ESTABELECIMENTO"],
+                "nome":     row.get("NOME_FANTASIA", row.get("NOME", "")),
+                "endereco": row.get("ENDERECO", ""),
+                "alvara":   row.get("IND_POSSUI_ALVARA", ""),
+                "inicio":   row.get("DATA_INICIO_ATIVIDADE", ""),
+            },
+        })
+
+    geojson = {"type": "FeatureCollection", "features": features}
+
+    # 4 ▸ Salva
+    out_geojson.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_geojson, "w", encoding="utf-8") as f:
+        json.dump(geojson, f, ensure_ascii=False)
+
+    print(f"[✓] GeoJSON salvo em {out_geojson} com {len(features)} pontos.")
 
 class KDNode:
     __slots__ = ("point", "idx", "left", "right")
