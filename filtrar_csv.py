@@ -73,6 +73,9 @@ def format_address(row):
         print(f"Erro ao formatar endereço para a linha: {row.name} - {e}")
         return ""
 
+INPUT_CSV_FILE = "data/20250401_atividade_economica.csv"
+OUTPUT_CSV_FILE = "data/atividade_economica_filtrada.csv"
+
 def main(INPUT_CSV_FILE, OUTPUT_CSV_FILE):
     # Verifica se o arquivo de entrada existe no diretório
     if not os.path.exists(INPUT_CSV_FILE):
@@ -170,4 +173,4 @@ def main(INPUT_CSV_FILE, OUTPUT_CSV_FILE):
     print("Processo de filtragem concluído.")
 
 if __name__ == '__main__':
-    main()
+    main(INPUT_CSV_FILE, OUTPUT_CSV_FILE)

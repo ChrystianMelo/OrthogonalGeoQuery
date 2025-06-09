@@ -115,7 +115,12 @@ def on_rectangle(selection_geojson):
 
     selected_features = [geojson_data["features"][i]["properties"] for i in hits]
 
-    columns = [{"name": col.capitalize(), "id": col} for col in selected_features[0].keys()]
+    columns = [
+        {"name": "Nome", "id": "nome"},
+        {"name": "Endereço", "id": "endereco"},
+        {"name": "Início Atividade", "id": "inicio"},
+        {"name": "Possui Alvará", "id": "alvara"},
+    ]
 
     return dash_table.DataTable(
         data=selected_features,
@@ -133,5 +138,5 @@ def on_rectangle(selection_geojson):
 if __name__ == "__main__":
     # Para rodar no render é preciso usar o host '0.0.0.0'
     app.run(debug=True, host='0.0.0.0')
-    # Comente a linha de cima e descomente a de baixo para rodar localmente
+    # Para rodar localmente não precisamos setar o host porque ele utiliza o do local.
     #app.run(debug=True)
