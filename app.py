@@ -131,4 +131,7 @@ def on_rectangle(selection_geojson):
 
 ###########################################################################
 if __name__ == "__main__":
+    # Para rodar no render é preciso usar o host '0.0.0.0'
     app.run(debug=True, host='0.0.0.0')
+    # Comente a linha de cima e descomente a de baixo para rodar localmente
+    #app.run(debug=True)

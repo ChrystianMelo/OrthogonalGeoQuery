@@ -1,8 +1,11 @@
 # Trabalho Prático 1 - Geometria Computacional
 
 **Universidade Federal de Minas Gerais**
+
 **Instituto de Ciências Exatas - Departamento de Ciência da Computação**
+
 **Disciplina: DCC207 - Algoritmos 2**
+
 **Professor: Renato Vimieiro**
 
 ## Integrantes
@@ -47,25 +50,47 @@ O sistema desenvolvido permite consultas interativas e ortogonais sobre estabele
 * **Geopy e OSMnx** para geocodificação e interação com a API OpenStreetMap.
 * **Matplotlib e Geopandas** para validação e visualização auxiliar dos dados.
 
-## Otimizações Realizadas
-
-* Implementação eficiente de buscas utilizando k-d trees reduzindo significativamente o tempo de consulta.
-* Pré-processamento inteligente de endereços para minimizar chamadas à API de geocodificação, armazenando resultados intermediários.
-* Interface leve e responsiva, com clustering de pontos para visualização mais clara e rápida no mapa.
-
 ## Estrutura do Projeto
 
 ```
 .
-├── data/                                # Diretório com dados CSV e GeoJSON processados
-├── app.py                               # Código principal da interface interativa
-├── main.py                              # Script para baixar e processar dados iniciais
-├── filtrar_csv.py                       # Script para filtrar e formatar os dados CSV originais
-├── utils.py                             # Funções utilitárias para geocodificação e árvore k-d
-├── requirements.txt                     # Dependências necessárias para executar o projeto
-└── README.md                            # Documentação completa do projeto
+├── data/
+│   ├── atividade_economica_filtrada.csv
+│   ├── bares_restaurantes.geojson
+│   └── cordenadas_bares_restaurantes.csv
+├── app.py              # Código principal da interface interativa
+├── main.py             # Script para baixar e processar dados iniciais
+├── filtrar_csv.py      # Script para filtrar e formatar os dados CSV originais
+├── utils.py            # Funções utilitárias para geocodificação e árvore k-d
+├── requirements.txt    # Dependências necessárias para executar o projeto
+├── setup.sh/setup.bat  # Scripts para configurar o ambiente
+├── run.sh/run.bat      # Scripts para executar a aplicação
+└── README.md           # Documentação completa do projeto
 ```
 
-## Considerações Finais
+## Como Executar Localmente
 
-Este projeto consolida conhecimentos práticos e teóricos sobre algoritmos geométricos, manejo eficiente de dados geográficos e desenvolvimento web interativo, destacando a importância da integração de técnicas computacionais avançadas em contextos reais.
+Siga os passos abaixo para configurar e executar o projeto em sua máquina local.
+
+### Para Linux (ou Windows com WSL)
+
+1.  **Configurar o ambiente (apenas uma vez):**
+    * No terminal, dê permissão de execução aos scripts: `chmod +x setup.sh run.sh`
+    * Execute o script de setup: `./setup.sh`
+
+2.  **Executar a aplicação:**
+    * A cada vez que for rodar o projeto, execute: `./run.sh`
+
+### Para Windows
+
+1.  **Configurar o ambiente (apenas uma vez):**
+    * Dê um duplo clique no arquivo `setup.bat`.
+
+2.  **Executar a aplicação:**
+    * A cada vez que for rodar o projeto, dê um duplo clique em `run.bat`.
+
+## Deploy (Publicação Online)
+
+A aplicação foi publicada utilizando o serviço **Render.com** e está disponível publicamente no seguinte endereço:
+
+[**https://tp01-alg02-20251.onrender.com/**](https://tp01-alg02-20251.onrender.com/)
