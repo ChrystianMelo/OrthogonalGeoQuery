@@ -1,5 +1,7 @@
 import os
 import json
+import sys
+import subprocess
 
 import utils
 import filtrar_csv
@@ -38,3 +40,15 @@ if __name__ == '__main__':
         print(f"[✓] Conversão para GeoJson feita com sucesso.")
     else:
         print(f"[✓] O arquivo '{coordinatesGeoJson}' já existe. Nenhum processo necessário.")
+        
+    print("\nPreparação de dados concluída. Iniciando a aplicação web...")
+    
+    try:
+        python_executable = sys.executable
+        subprocess.run([python_executable, 'app.py'], check=True)
+    except FileNotFoundError:
+        print(f"Erro: O executável do Python não foi encontrado.")
+    except subprocess.CalledProcessError as e:
+        print(f"Ocorreu um erro ao executar a aplicação 'app.py': {e}")
+    except KeyboardInterrupt:
+        print("\nAplicação encerrada pelo usuário.")
