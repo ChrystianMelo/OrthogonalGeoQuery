@@ -104,7 +104,7 @@ app.clientside_callback(
 @app.callback(Output("info", "children"), Input("draw", "geojson"), prevent_initial_call=True)
 def on_rectangle(selection_geojson):
     if not selection_geojson or len(selection_geojson.get("features", [])) == 0:
-        return dash.no_update
+        return ""
     coords = selection_geojson["features"][-1]["geometry"]["coordinates"][0]
     xs, ys = zip(*coords)
     bbox = (min(xs), min(ys), max(xs), max(ys))
